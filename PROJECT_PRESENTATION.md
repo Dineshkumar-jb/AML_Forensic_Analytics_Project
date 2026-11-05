@@ -195,15 +195,15 @@ The pipeline extracts a multi-faceted feature representation combining three tie
 
 ### Baseline Formulation
 Target composite score balances three core pillars:
-$$S_{\text{composite}} = 0.40 \cdot S_{\text{forensic}} + 0.30 \cdot S_{\text{iso\_forest}} + 0.30 \cdot S_{\text{xgboost}}$$
+$$S_{\text{composite}} = 0.40 \cdot S_{\text{Forensic}} + 0.30 \cdot S_{\text{IF}} + 0.30 \cdot S_{\text{XGB}}$$
 
 ### Dynamic Proportional Weight Redistribution
 When supervised labels are absent (e.g., custom user CSV uploads without ground-truth labels), running XGBoost would require fabricating fake predictions.  
 **Our Solution:** The engine applies formal proportional weight redistribution over active signals $\mathcal{A}$:
 $$w_k^* = \frac{w_k}{\sum_{j \in \mathcal{A}} w_j}$$
 When XGBoost is deactivated:
-- $w_{\text{forensic}}^* = \frac{0.40}{0.40 + 0.30} = \frac{0.40}{0.70} \approx \mathbf{57.14\%}$
-- $w_{\text{iso\_forest}}^* = \frac{0.30}{0.40 + 0.30} = \frac{0.30}{0.70} \approx \mathbf{42.86\%}$
+- **Forensics:** $w_{\text{Forensic}}^* = \frac{0.40}{0.40 + 0.30} = \frac{0.40}{0.70} \approx \mathbf{57.14\%}$
+- **Isolation Forest:** $w_{\text{IF}}^* = \frac{0.30}{0.40 + 0.30} = \frac{0.30}{0.70} \approx \mathbf{42.86\%}$
 - Guaranteed Property: $\sum_{k \in \mathcal{A}} w_k^* = 1.0$ and $S_{\text{composite}} \in [0, 100]$.
 
 ### 4-Tier Standardized Risk Hierarchy
@@ -312,3 +312,4 @@ The interactive analyst web application provides 6 dedicated inspection consoles
 - Nigrini, M. J. (2012). *Benford's Law: Applications for Forensic Accounting, Auditing, and Fraud Detection*. John Wiley & Sons.
 - Financial Action Task Force (FATF) Guidelines on Risk-Based AML/CFT.
 - Lundberg, S. M., & Lee, S.-I. (2017). *A Unified Approach to Interpreting Model Predictions (SHAP)*. NeurIPS.
+

@@ -159,7 +159,9 @@ The raw anomaly score is linearly rescaled to a normalized risk metric: $S_{\tex
 
 #### Supervised Classification: Stratified XGBoost
 Gradient boosted decision trees trained on ground-truth laundering labels with a 75/25 stratified holdout split:
+
 $$\mathcal{L}^{(t)} = \sum_{i=1}^N \ell\left(y_i, \hat{y}_i^{(t-1)} + f_t(x_i)\right) + \gamma T + \frac{1}{2}\lambda \sum_{j=1}^T w_j^2$$
+
 Evaluated with ROC-AUC, Precision, Recall, and F1-Score. The calibrated probability is rescaled to $S_{\text{XGB}} = P(\text{Laundering}) \times 100$.
 
 ---
@@ -170,18 +172,21 @@ To eliminate siloing between heuristic rules and machine learning, the system sy
 
 #### Mathematical Formulation & Proportional Redistribution
 Let $\mathcal{K} = \{\text{Forensic}, \text{IsolationForest}, \text{XGBoost}\}$ represent the component signals with baseline target weights:
-$$w_{\text{forensic}} = 0.40, \quad w_{\text{iso\_forest}} = 0.30, \quad w_{\text{xgboost}} = 0.30$$
+
+$$w_{\text{Forensic}} = 0.40, \quad w_{\text{IF}} = 0.30, \quad w_{\text{XGB}} = 0.30$$
 
 Let $\mathcal{A} \subseteq \mathcal{K}$ represent the active signals available in the dataset. When ground truth is absent (e.g., unlabeled customer CSV), supervised models cannot run honestly. **Rather than fabricating artificial labels**, the engine dynamically redistributes weights proportionally:
+
 $$w_k^* = \frac{w_k}{\sum_{j \in \mathcal{A}} w_j}, \quad \forall k \in \mathcal{A}$$
 
 $$\sum_{k \in \mathcal{A}} w_k^* = 1.0$$
 
-When XGBoost is inactive:
-$$w_{\text{forensic}}^* = \frac{0.40}{0.40 + 0.30} = \frac{0.40}{0.70} \approx 57.14\%$$
-$$w_{\text{iso\_forest}}^* = \frac{0.30}{0.40 + 0.30} = \frac{0.30}{0.70} \approx 42.86\%$$
+When supervised labels are unavailable (XGBoost inactive):
+- **Forensic Engine Weight ($w_{\text{Forensic}}^*$):** $\frac{0.40}{0.40 + 0.30} = \frac{0.40}{0.70} \approx 57.14\%$
+- **Isolation Forest Weight ($w_{\text{IF}}^*$):** $\frac{0.30}{0.40 + 0.30} = \frac{0.30}{0.70} \approx 42.86\%$
 
-The composite score is computed as:
+The unified composite score is computed as:
+
 $$S_{\text{composite}} = \sum_{k \in \mathcal{A}} w_k^* \cdot S_k, \quad S_{\text{composite}} \in [0, 100]$$
 
 #### 4-Tier Standard Risk Classification
@@ -338,27 +343,6 @@ In compliance with the Third Review deliverables:
   *Contains the comprehensive, slide-by-slide presentation deck with complete speaking notes, mathematical proofs, diagrams, and evaluation tables matching the PPT.*
 - **Interactive Presentation Web App:** [`PROJECT_PRESENTATION.html`](PROJECT_PRESENTATION.html)  
   *A standalone presentation deck web application with keyboard slide navigation (`←` / `→`), modern financial dark UI, interactive metric cards, and presenter notes.*
-
----
-
-## 🎓 Third Review Viva & Defense FAQ
-
-#### Q1: Why combine deterministic forensic rules with machine learning into a composite score?
-> **Answer:** In anti-money laundering compliance, neither rules nor ML can succeed independently:
-> - **Heuristic Rules** (Benford's Law, RSF, Structuring) provide clear statutory compliance, explainability, and legal defensibility required by regulators (e.g., FinCEN, FATF). However, rules are rigid and easily circumvented by adaptive criminals.
-> - **Machine Learning** (Isolation Forest, XGBoost) excels at detecting non-linear interactions and novel zero-day typologies. However, ML models often produce black-box scores that compliance officers cannot defend in court.
-> - **Our Multi-Pillar Composite Engine** combines both: deterministic forensic rules anchor the base score (40%), while ML isolates subtle behavioral anomalies (30% IF + 30% XGB), producing a transparent 0–100 score.
-
-#### Q2: What happens mathematically when an uploaded customer CSV does not contain ground truth labels?
-> **Answer:** In real-world enterprise deployments, operational transaction streams are unlabeled. Rather than fabricating synthetic labels or generating pseudo-probabilities, the system activates **Dynamic Proportional Weight Redistribution**:
-> $$w_k^* = \frac{w_k}{\sum_{j \in \mathcal{A}} w_j}$$
-> The supervised XGBoost weight (30%) is eliminated, and its weight is proportionally redistributed between Forensics ($57.14\%$) and Isolation Forest ($42.86\%$), preserving a strict 0–100 scale without fabricating artificial predictions.
-
-#### Q3: How is Benford's Law applied to transaction monitoring and what are its limitations?
-> **Answer:** Benford's Law states that in naturally occurring multi-order numerical datasets, the probability of leading digit $d$ is $\log_{10}(1 + 1/d)$. Fraudulent actors who fabricate transaction amounts or deliberately structure amounts under thresholds (e.g., \$9,500, \$9,800) distort this logarithmic curve. We quantify this deviation using **Mean Absolute Deviation (MAD)** and **Chi-Square Goodness-of-Fit ($\chi^2$)**. Its limitation is that it applies to macro distributions spanning multiple orders of magnitude; single transactions are evaluated in conjunction with RSF and velocity metrics.
-
-#### Q4: How does your system satisfy the "Right to Explanation" under regulatory frameworks?
-> **Answer:** Under FATF guidelines and GDPR Article 22, automated risk scoring cannot be arbitrary. Our system integrates **SHAP (SHapley Additive exPlanations)** with TreeExplainer to compute exact additive feature attributions for every transaction. If a transaction receives a score of 82/100, the compliance officer is presented with directional vectors (e.g., `amount_to_sender_mean_ratio: +24.2`, `rsf_score: +18.5`, `is_structuring: +15.0`), accompanied by natural-language incident notes and exportable ReportLab PDF dossiers.
 
 ---
 
